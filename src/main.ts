@@ -6,7 +6,8 @@ import * as session from 'express-session';
 import * as passport from 'passport';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import * as csurf from 'csurf';
+import * as csrf from 'csurf';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,41 +27,55 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
-  // Configure CORS
-  const frontendUrl = configService.get<string>('app.frontendUrl');
+  // Configure CORS with credentials support
   app.enableCors({
-    origin: frontendUrl,
+    origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,
   });
 
   // Configure session
-  const cookieConfig = configService.get('cookie');
-  app.use(
-    session({
-      secret: cookieConfig.secret,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: cookieConfig.httpOnly,
-        secure: cookieConfig.secure,
-        maxAge: cookieConfig.maxAge,
-        sameSite: cookieConfig.sameSite,
-      },
-    }),
-  );
+  const sessionConfig: session.SessionOptions = {
+    secret: configService.get<string>('COOKIE_SECRET', ''),
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    },
+  };
+
+  app.use(session(sessionConfig));
 
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // CSRF protection
-  app.use(csurf({ cookie: true }));
+  // Only enable CSRF protection in production
+  if (process.env.NODE_ENV === 'production') {
+    const csrfMiddleware = csrf({ cookie: { secure: true, sameSite: 'none' } });
+
+    app.use(csrfMiddleware);
+
+    // Add middleware to expose CSRF token
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (typeof req.csrfToken === 'function') {
+        res.cookie('XSRF-TOKEN', req.csrfToken(), {
+          secure: true,
+          sameSite: 'none',
+          httpOnly: false,
+        });
+      }
+      next();
+    });
+  }
 
   // Global prefix
   app.setGlobalPrefix('api');
 
-  const port = configService.get<number>('app.port') || 3000;
-  await app.listen(port);
+  await app.listen(configService.get<number>('PORT', 3001));
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
-bootstrap();
+
+void bootstrap();

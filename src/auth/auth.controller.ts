@@ -7,18 +7,18 @@ import {
   Req,
   HttpCode,
   Query,
+  ClassSerializerInterceptor,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { Request } from 'express';
-
-class RegisterDto {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordRequestDto } from './dto/reset-password-request.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UserResponseDto } from '../users/dto/user-response.dto';
+import { plainToInstance } from 'class-transformer';
 
 // This DTO is used in the Swagger documentation
 // class LoginDto {
@@ -26,16 +26,8 @@ class RegisterDto {
 //   password: string;
 // }
 
-class ResetPasswordRequestDto {
-  email: string;
-}
-
-class ResetPasswordDto {
-  token: string;
-  newPassword: string;
-}
-
 @Controller('auth')
+@UseInterceptors(ClassSerializerInterceptor)
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -55,10 +47,10 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   login(@Req() req: Request) {
-    // The user is automatically added to the request by Passport
+    const userResponse = plainToInstance(UserResponseDto, req.user);
     return {
       message: 'Login successful',
-      user: req.user,
+      user: userResponse,
     };
   }
 
@@ -117,6 +109,6 @@ export class AuthController {
 
   @Get('profile')
   getProfile(@Req() req: Request) {
-    return req.user;
+    return plainToInstance(UserResponseDto, req.user);
   }
 }
