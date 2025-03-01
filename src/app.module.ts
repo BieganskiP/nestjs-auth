@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
 import { RoutesModule } from './routes/routes.module';
 import { RegionsModule } from './regions/regions.module';
+import { DeliveryManifestsModule } from './delivery-manifests/delivery-manifests.module';
+import { DeliveryStopsModule } from './delivery-stops/delivery-stops.module';
 import { RateLimiterMiddleware } from './common/middleware/rate-limiter.middleware';
 import {
   databaseConfig,
@@ -33,12 +35,14 @@ import { getDatabaseConfig } from './config/database.config';
     EmailModule,
     RoutesModule,
     RegionsModule,
+    DeliveryManifestsModule,
+    DeliveryStopsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RateLimiterMiddleware).forRoutes('*path');
+    consumer.apply(RateLimiterMiddleware).forRoutes('*');
   }
 }

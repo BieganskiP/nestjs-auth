@@ -13,11 +13,28 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Enable validation
+  // Enable validation with better error messages
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map(error => {
+          return {
+            property: error.property,
+            constraints: error.constraints,
+          };
+        });
+        return {
+          statusCode: 400,
+          message: messages,
+          error: 'Bad Request',
+        };
+      },
     }),
   );
 

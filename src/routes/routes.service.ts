@@ -60,4 +60,16 @@ export class RoutesService {
       throw new NotFoundException(`Route with ID ${id} not found`);
     }
   }
+
+  async findByUserId(userId: string): Promise<Route[]> {
+    console.log(`Finding routes for user ID: ${userId}`);
+    
+    const routes = await this.routesRepository.find({
+      where: { userId, active: true },
+    });
+    
+    console.log(`Found ${routes.length} routes for user ID: ${userId}`);
+    
+    return routes;
+  }
 }
