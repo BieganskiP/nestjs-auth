@@ -7,9 +7,15 @@ import { SessionSerializer } from './session.serializer';
 import { LocalStrategy } from './strategies/local.strategy';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticatedGuard } from './guards/authenticated.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
-  imports: [UsersModule, EmailModule],
+  imports: [
+    UsersModule,
+    EmailModule,
+    PassportModule.register({ session: true }),
+  ],
   providers: [
     AuthService,
     SessionSerializer,
@@ -17,6 +23,10 @@ import { AuthenticatedGuard } from './guards/authenticated.guard';
     {
       provide: APP_GUARD,
       useClass: AuthenticatedGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
   controllers: [AuthController],

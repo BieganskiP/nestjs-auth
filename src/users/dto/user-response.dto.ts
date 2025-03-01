@@ -1,4 +1,6 @@
 import { Exclude, Expose } from 'class-transformer';
+import { Role } from '../../auth/enums/role.enum';
+import { UserStatus } from '../entities/user.entity';
 
 @Exclude() // By default exclude all properties
 export class UserResponseDto {
@@ -13,6 +15,12 @@ export class UserResponseDto {
 
   @Expose()
   lastName: string;
+
+  @Expose()
+  role: Role;
+
+  @Expose()
+  status: UserStatus;
 
   @Expose()
   isEmailVerified: boolean;

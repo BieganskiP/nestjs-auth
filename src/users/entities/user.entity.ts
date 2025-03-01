@@ -9,6 +9,14 @@ import {
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../../auth/enums/role.enum';
+
+// Define user status enum
+export enum UserStatus {
+  ACTIVE = 'active',
+  BLOCKED = 'blocked',
+  DELETED = 'deleted',
+}
 
 @Entity('users')
 export class User {
@@ -42,6 +50,20 @@ export class User {
   @Column({ type: 'varchar', nullable: true, default: null })
   @Exclude({ toPlainOnly: true })
   emailVerificationToken: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
+  })
+  role: Role;
+
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
 
   @CreateDateColumn()
   createdAt: Date;

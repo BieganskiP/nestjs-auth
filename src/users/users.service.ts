@@ -4,9 +4,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Repository, MoreThan, DeleteResult, Not } from 'typeorm';
+import { User, UserStatus } from './entities/user.entity';
 import * as crypto from 'crypto';
+import { Role, ROLE_HIERARCHY } from '../auth/enums/role.enum';
 
 @Injectable()
 export class UsersService {
@@ -15,20 +16,36 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
-  }
-
-  async findOne(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+  async findAll(includeDeleted = false): Promise<User[]> {
+    if (includeDeleted) {
+      return this.usersRepository.find();
     }
-    return user;
+    return this.usersRepository.find({
+      where: { status: Not(UserStatus.DELETED) },
+    });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+  async findOne(id: string, includeDeleted = false): Promise<User | null> {
+    if (includeDeleted) {
+      return this.usersRepository.findOneBy({ id });
+    }
+    return this.usersRepository.findOneBy({
+      id,
+      status: Not(UserStatus.DELETED),
+    });
+  }
+
+  async findByEmail(
+    email: string,
+    includeDeleted = false,
+  ): Promise<User | null> {
+    if (includeDeleted) {
+      return this.usersRepository.findOneBy({ email });
+    }
+    return this.usersRepository.findOneBy({
+      email,
+      status: Not(UserStatus.DELETED),
+    });
   }
 
   async create(userData: Partial<User>): Promise<User> {
@@ -36,26 +53,54 @@ export class UsersService {
       throw new ConflictException('Email is required');
     }
 
-    const existingUser = await this.findByEmail(userData.email);
+    const existingUser = await this.findByEmail(userData.email, true);
     if (existingUser) {
       throw new ConflictException('Email already in use');
     }
 
+    // Ensure new users are active
+    userData.status = UserStatus.ACTIVE;
     const user = this.usersRepository.create(userData);
     return this.usersRepository.save(user);
   }
 
   async update(id: string, userData: Partial<User>): Promise<User> {
-    await this.findOne(id); // Ensure user exists
+    const existingUser = await this.findOne(id);
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
     await this.usersRepository.update(id, userData);
-    return this.findOne(id);
+    const updatedUser = await this.findOne(id);
+    if (!updatedUser) {
+      throw new NotFoundException('User not found after update');
+    }
+    return updatedUser;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.usersRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+  async remove(id: string): Promise<DeleteResult> {
+    return this.usersRepository.delete(id);
+  }
+
+  async updateStatus(id: string, status: UserStatus): Promise<User> {
+    const user = await this.findOne(id, true);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    user.status = status;
+    return this.usersRepository.save(user);
+  }
+
+  async blockUser(id: string): Promise<User> {
+    return this.updateStatus(id, UserStatus.BLOCKED);
+  }
+
+  async softDeleteUser(id: string): Promise<User> {
+    return this.updateStatus(id, UserStatus.DELETED);
+  }
+
+  async activateUser(id: string): Promise<User> {
+    return this.updateStatus(id, UserStatus.ACTIVE);
   }
 
   async createPasswordResetToken(
@@ -99,6 +144,10 @@ export class UsersService {
 
   async createEmailVerificationToken(userId: string): Promise<string> {
     const user = await this.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const token = crypto.randomBytes(32).toString('hex');
 
     user.emailVerificationToken = token;
@@ -121,5 +170,23 @@ export class UsersService {
     await this.usersRepository.save(user);
 
     return true;
+  }
+
+  async updateUserRole(id: string, role: Role): Promise<User> {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.role = role;
+    return this.usersRepository.save(user);
+  }
+
+  // Helper method to check if one role is higher than another
+  hasHigherRole(role1: Role, role2: Role): boolean {
+    const role1Index = ROLE_HIERARCHY.indexOf(role1);
+    const role2Index = ROLE_HIERARCHY.indexOf(role2);
+
+    return role1Index >= role2Index;
   }
 }

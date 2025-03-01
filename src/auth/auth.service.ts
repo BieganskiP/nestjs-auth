@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
-import { User } from '../users/entities/user.entity';
+import { User, UserStatus } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +18,17 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check user status
+    if (user.status === UserStatus.BLOCKED) {
+      throw new UnauthorizedException(
+        'Your account has been blocked. Please contact support.',
+      );
+    }
+
+    if (user.status === UserStatus.DELETED) {
+      throw new UnauthorizedException('Your account has been deleted.');
     }
 
     const isPasswordValid = await user.validatePassword(password);
