@@ -6,6 +6,8 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
+import { RoutesModule } from './routes/routes.module';
+import { RegionsModule } from './regions/regions.module';
 import { RateLimiterMiddleware } from './common/middleware/rate-limiter.middleware';
 import {
   databaseConfig,
@@ -29,6 +31,8 @@ import { getDatabaseConfig } from './config/database.config';
     UsersModule,
     AuthModule,
     EmailModule,
+    RoutesModule,
+    RegionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
