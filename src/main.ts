@@ -1,12 +1,13 @@
+import './polyfills';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as session from 'express-session';
-import * as passport from 'passport';
-import * as cookieParser from 'cookie-parser';
+import session from 'express-session';
+import passport from 'passport';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import * as csrf from 'csurf';
+import csrf from 'csurf';
 import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
