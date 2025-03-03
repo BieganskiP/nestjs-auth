@@ -23,7 +23,7 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
       exceptionFactory: (errors) => {
-        const messages = errors.map(error => {
+        const messages = errors.map((error) => {
           return {
             property: error.property,
             constraints: error.constraints,

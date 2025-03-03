@@ -88,34 +88,37 @@ export class DeliveryManifestsService {
     }
   }
 
-  async findManifestsForUserRoute(userId: string, date?: string): Promise<DeliveryManifest[]> {
-    console.log(`Finding manifests for user ID: ${userId}, date: ${date || 'any'}`);
-    
+  async findManifestsForUserRoute(
+    userId: string,
+    date?: string,
+  ): Promise<DeliveryManifest[]> {
     // Find routes where this user is assigned
     const routes = await this.routesService.findByUserId(userId);
-    
+
     if (!routes || routes.length === 0) {
-      console.log(`No routes found for user ID: ${userId}`);
-      throw new NotFoundException('You do not have any routes assigned. Please contact an administrator.');
+      throw new NotFoundException(
+        'You do not have any routes assigned. Please contact an administrator.',
+      );
     }
-    
+
     // Get route IDs
-    const routeIds = routes.map(route => route.id);
-    console.log(`Found route IDs: ${routeIds.join(', ')}`);
-    
+    const routeIds = routes.map((route) => route.id);
+
     // Build query to find manifests for these routes
-    const queryBuilder = this.manifestsRepository.createQueryBuilder('manifest')
+    const queryBuilder = this.manifestsRepository
+      .createQueryBuilder('manifest')
       .leftJoinAndSelect('manifest.route', 'route')
       .leftJoinAndSelect('manifest.deliveryStops', 'stop')
       .where('manifest.routeId IN (:...routeIds)', { routeIds });
-    
+
     if (date) {
-      queryBuilder.andWhere('DATE(manifest.deliveryDate) = DATE(:date)', { date });
+      queryBuilder.andWhere('DATE(manifest.deliveryDate) = DATE(:date)', {
+        date,
+      });
     }
-    
+
     const manifests = await queryBuilder.getMany();
-    console.log(`Found ${manifests.length} manifests for user's routes`);
-    
+
     return manifests;
   }
 }
