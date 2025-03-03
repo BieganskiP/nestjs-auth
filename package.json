@@ -1,6 +1,6 @@
 {
   "name": "nest-auth",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "A reusable NestJS authentication template",
   "author": "",
   "private": true,
@@ -94,6 +94,5 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  },
-  "type": "module"
+  }
 }

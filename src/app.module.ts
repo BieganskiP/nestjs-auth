@@ -18,7 +18,6 @@ import {
   cookieConfig,
 } from './config/env.config';
 import { getDatabaseConfig } from './config/database.config';
-import * as crypto from 'crypto';
 
 @Module({
   imports: [
