@@ -26,6 +26,8 @@
 
 A reusable NestJS application template with authentication, authorization, email functionality, and more.
 
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/BieganskiP/nestjs-auth?labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit%20Reviews)
+
 ## Features
 
 - **Authentication & Authorization**:
