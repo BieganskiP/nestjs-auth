@@ -10,15 +10,9 @@ export const getDatabaseConfig = (
     throw new Error('Database URL is not defined in environment variables');
   }
 
-  const url = new URL(databaseUrl);
-
   return {
     type: 'postgres',
-    host: url.hostname,
-    port: parseInt(url.port),
-    username: url.username,
-    password: url.password,
-    database: url.pathname.slice(1),
+    url: databaseUrl,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: configService.get('app.nodeEnv') !== 'production',
     ssl:
